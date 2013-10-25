@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="default"
+		module="default-56b8a6"
+		revision="0.1-SNAPSHOT"
+		extra-sbtVersion="0.12"
+		extra-scalaVersion="2.9.2"
+		conf="runtime"
+		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom"
+		date="20131011220435"/>
+	<dependencies>
+		<module organisation="io.spray" name="sbt-revolver">
+			<revision name="0.6.2" status="release" pubdate="20121015132957" resolver="sbt-plugin-releases" artresolver="sbt-plugin-releases" homepage="http://github.com/spray/sbt-revolver" extra-sbtVersion="0.12" extra-scalaVersion="2.9.2" downloaded="true" searched="true" default="false" conf="default(compile), compile" position="0">
+				<license name="Apache License 2.0" url="https://github.com/spray/sbt-revolver/raw/master/LICENSE"/>
+				<metadata-artifact status="successful" details="" size="2001" time="391" location="/home/henry/.ivy2/cache/scala_2.9.2/sbt_0.12/io.spray/sbt-revolver/ivy-0.6.2.xml" searched="true" original-local-location="/home/henry/.ivy2/cache/scala_2.9.2/sbt_0.12/io.spray/sbt-revolver/ivy-0.6.2.xml.original" origin-is-local="false" origin-location="http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/io.spray/sbt-revolver/scala_2.9.2/sbt_0.12/0.6.2/ivys/ivy.xml"/>
+				<caller organisation="default" name="default-56b8a6" conf="compile, runtime" rev="0.6.2" rev-constraint-default="0.6.2" rev-constraint-dynamic="0.6.2" callerrev="0.1-SNAPSHOT" extra-sbtVersion="0.12" extra-scalaVersion="2.9.2"/>
+				<artifacts>
+					<artifact name="sbt-revolver" type="jar" ext="jar" status="successful" details="" size="59932" time="313" location="/home/henry/.ivy2/cache/scala_2.9.2/sbt_0.12/io.spray/sbt-revolver/jars/sbt-revolver-0.6.2.jar">
+						<origin-location is-local="false" location="http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/io.spray/sbt-revolver/scala_2.9.2/sbt_0.12/0.6.2/jars/sbt-revolver.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

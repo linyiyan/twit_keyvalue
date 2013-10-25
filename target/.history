@@ -1,0 +1,19 @@
+compile
+exit
+compile
+run
+compile
+run
+compile
+run
+compile
+run
+compile
+run
+compile
+run
+compile
+exit
+console
+import akka.actor.ActorSystem
+console
