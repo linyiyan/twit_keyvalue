@@ -32,6 +32,7 @@ object TwitStore{
 
   def set(key : String , value : String , cb : MyServiceActor) : Unit = {
     val uri = base_uri + "?method=set"+"&key="+key+"&value="+value
+
     val response: Future[HttpResponse] = pipeline(Get(uri))
     response onComplete {
       case Success(sth) => cb.print_client_response(sth.toString()); println(sth.toString())
