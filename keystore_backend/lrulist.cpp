@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <pthread.h>
+#include <iterator>
 
 extern pthread_mutex_t lru_lock;
 
@@ -12,8 +13,15 @@ using namespace std;
 
 #include "lrulist.h"
 
-template<class T>
-void LRUList<T>::lru_push_front(T elem){
+
+LRUList::LRUList(unsigned int chunk_num){
+	int init = 0;
+	lst.resize(chunk_num);
+	generate(lst.begin() , lst.end() , [&init](){return init++;});
+}
+
+
+void LRUList::lru_push_front(unsigned int elem){
 	pthread_mutex_lock(&lru_lock);
 	
 	auto pos = find(this->lst.begin() , this->lst.end() , elem);
@@ -31,23 +39,62 @@ void LRUList<T>::lru_push_front(T elem){
 	pthread_mutex_unlock(&lru_lock);
 }
 
-template<class T>
-T LRUList<T>::get_oldest(){
-	if(lst.size()<max_size) return lst.size();
-	else {
+unsigned int LRUList::get_oldest(){
+	//if(lst.size()<max_size) return lst.size();
+	// else {
 		if(!lst.empty())
 			return lst.back();
 		else 
-			return 0; // TODO: not generic
-	}
+			return 0; 
+	//}
 }
 
-template<class T>
-void LRUList<T>::drag_to_front(T& elem){
-	auto pos = find_if(lst.begin() , lst.end() , [&elem](T& t){return elem==t;});
+
+void LRUList::drag_to_front(unsigned int& elem){
+	auto pos = find_if(lst.begin() , lst.end() , [&elem](unsigned int& t){return elem==t;});
 	if(pos != lst.end()){
 		lst.erase(pos);	
 	}
 
 	lst.push_front(elem);
 }
+
+void LRUList::print_lru_list(ostream& out){
+	copy(lst.begin() , lst.end() , ostream_iterator<unsigned int>(out , "  "));
+	cout<<endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
