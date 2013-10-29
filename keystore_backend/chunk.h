@@ -19,6 +19,10 @@ class Chunk{
 	void set(char* d , unsigned int hashed_code) {strcpy(data , d); assoc_key = hashed_code;} 
 	
 	string to_string();
+	
+	bool is_valid() {return data!=NULL;}
+	
+	char* get_data(){return data;}
 };
 
 #endif

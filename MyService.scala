@@ -12,8 +12,6 @@ import spray.client.pipelining._
 import scala.concurrent._
 import akka.actor.ActorSystem
 
-
-
 object TwitStore{
   implicit val system = ActorSystem()
   import system.dispatcher // execution context for futures

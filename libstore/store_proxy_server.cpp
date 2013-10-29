@@ -15,11 +15,8 @@
 using namespace std;
 
 #include "twit_hash.h"
-
 #include "handlers.h"
-
 #include "config.h"
-
 #include "storage_server_manager.h"
 
 
