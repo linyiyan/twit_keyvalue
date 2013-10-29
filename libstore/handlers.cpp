@@ -9,11 +9,14 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 
 using namespace std;
 
 #include "twit_hash.h"
+#include "config.h"
+#include "storage_server_manager.h"
 
 
 void twit_server_http_req_handler(evhttp_request *req, void *arg) {
@@ -70,3 +73,66 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
   evbuffer_free(buf);
     
 }
+
+
+
+void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
+	
+	if(req->kind==EVHTTP_RESPONSE){
+		printf("it's response\n");
+	}
+	if (req == NULL) {
+        printf("timed out!\n");
+    } else if (req->response_code == 0) {
+    	storage_server_manager::storage_server_list_initialized = 1;
+        printf("connection refused!\n");
+    } else if (req->response_code != 200) {
+    	storage_server_manager::storage_server_list_initialized = 1;
+        printf("error: %u %s\n", req->response_code, req->response_code_line);
+    } else {
+    	storage_server_manager::storage_server_list_initialized = 2;
+    	evbuffer *input = req->input_buffer;
+    	char buf[1024];
+    	int n;
+    	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
+       		printf("%s\n" , buf);
+    	}
+        printf("success : %u %s\n", req->response_code, req->response_code_line);
+    }
+	
+	
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -3,7 +3,7 @@
 start=$((8090))
 num=$1
 end=$((8090+$1))
-for (( c=start; c<=end; c++ ))
+for (( c=start; c<end; c++ ))
 do
-   ./main $c &
+   ./main $c $start $end&
 done

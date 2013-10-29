@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <string>
 #include <sstream>
+#include <map>
+#include <iterator>
 
 #include <event.h>
 //for http
@@ -33,7 +35,16 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
     
     
     ostringstream oss;
-    if(method=="get"){
+    if(method=="setup"){
+    	oss<<"send you a list of servers"<<endl;
+    	cout<<"welcome, send you a list"<<endl;
+    	
+    	transform(storage_servers.begin() , storage_servers.end() , 
+    	ostream_iterator<string>(oss , "\n"),
+    	[](map<string,string>& m){return m["ip"]+":"+m["port"];});
+    	
+    }
+    else if(method=="get"){
     	oss<<"Ok, you can get."<<endl;
     	cout<<"want to get"<<endl;
     	
@@ -89,9 +100,31 @@ int main(int argc, char **argv)
 		cout<<"specify a port"<<endl;
 		return 0;
 	}
+	else if(argc<4){
+		cout<<"specify a port range"<<endl;
+		return 0;
+	}
 	else{
 		string szPort = argv[1];
 		port = stoi(szPort);
+		
+		string szLower = argv[2]; // lower bound of ports
+		string szUpper = argv[3]; // uppper bound of ports
+		
+		unsigned short pstart = stoi(szLower), pend = stoi(szUpper);
+		for(unsigned short p=pstart ; p<=pend ; p++){
+			map<string,string> m;
+			m["ip"]="0.0.0.0";
+			m["port"]=to_string(p);
+			storage_servers.push_back(m);
+		}
+		
+		
+		/* storage_servers.resize(pend-pstart+1);
+		unsigned short p = pstart;
+		generate(storage_servers.begin() , storage_servers.end() , 
+			[&p](){return {{"ip","0.0.0.0"} , {"port" , to_string(p++)}}; });
+			*/ 
 	}
 
 	
@@ -108,6 +141,7 @@ int main(int argc, char **argv)
 	}
 */
 
+
 	event_init();
 	evhttp *httpd = evhttp_start("0.0.0.0", port);
                    
@@ -116,10 +150,7 @@ int main(int argc, char **argv)
 	
 	event_dispatch();
   
-  	evhttp_free(httpd); 
-  	
-  	
-  	
+  	evhttp_free(httpd);  	
   	
   		
 	return 0;

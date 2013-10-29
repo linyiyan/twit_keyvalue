@@ -7,4 +7,7 @@ void twit_server_http_req_handler(struct evhttp_request *req, void *arg);
 /* handle http request from twit_store */
 void store_server_http_req_handler(struct evhttp_request *req , void *arg);
 
+/* handle setup response from twit_store */
+void twit_store_setup_resp_handler(evhttp_request *req, void *arg);
+
 #endif
