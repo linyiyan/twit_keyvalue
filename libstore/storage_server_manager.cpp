@@ -3,7 +3,11 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
+#include <sstream>
+#include <functional>
+#include <algorithm>
+#include <iterator>
+#include <unistd.h>
 #include <event.h>
 //for http
 #include <evhttp.h>
@@ -13,16 +17,23 @@ using std::string;
 using std::vector;
 using std::cout;
 using std::endl;
-
+using std::istringstream;
+using std::ostringstream;
+using std::stoi;
+using std::transform;
+using std::mem_fun_ref;
+using std::ostream_iterator;
 #include "config.h"
 #include "storage_server_manager.h"
 #include "handlers.h"
 
 int storage_server_manager::storage_server_list_initialized=0;
 
-storage_server_manager::storage_server_manager(){
+storage_server_manager::storage_server_manager(){	
 	
-	
+}
+
+void storage_server_manager::init(){
 	event_base* base = event_init();
 	const char *addr = "localhost";
     unsigned int port = 8090;
@@ -39,21 +50,39 @@ storage_server_manager::storage_server_manager(){
 	
 	event_base_dispatch(base);
 	
-	cout<<"ddd"<<endl;
-	
+	int count = 100;
+	while(count-- > 1){
+		sleep(1);
+		if(storage_server_list_initialized==2) break;
+	}
+	if(storage_server_list_initialized==0) printf("setup time out\n");
+	else if(storage_server_list_initialized==1) printf("setup false\n");
+	else printf("setup successful\n");
 	
 }
 
 storage_server_manager& storage_server_manager::instance(){
 	static storage_server_manager inst;
-	
 	return inst;
 }
 
+void storage_server_manager::init_servers(string sz){
+	istringstream iss(sz);
+	string line;
+	while(getline(iss , line , '\n')){
+		auto pos = line.find(':');
+		if(pos!=string::npos){
+			string szIp = line.substr(0,pos);
+			string szPort = line.substr(pos+1);
+			storage_servers.push_back(server_config(szIp , stoi(szPort) , 50));
+		}
+	}
+	
+}
 
 server_config& storage_server_manager::getServerByHashCode(uint32_t hash_code){
 
-  unsigned int server_num = this->storage_servers.size();
+  unsigned int server_num = storage_servers.size();
   int index = 0;
   double dhash_code = hash_code;
   for(;index<server_num;index++){
@@ -63,5 +92,5 @@ server_config& storage_server_manager::getServerByHashCode(uint32_t hash_code){
     
   }
   index = (index+1)%server_num;
-  return this->storage_servers[index]; 
+  return storage_servers[index]; 
 }

@@ -12,6 +12,8 @@ struct server_config{
 		  port(p) , 
 		  timeout(t)
 		  {}
+		  
+	string to_string();
 };
 
 

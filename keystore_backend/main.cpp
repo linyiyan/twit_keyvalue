@@ -52,6 +52,7 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
     	unsigned int key = stol(szKey);
     	
     	Chunk ck = get(key);
+    	
     	if(!ck.is_valid()) oss<<"But data not found."<<endl;
     	else oss<<"Here is the data: "<<ck.get_data()<<endl;
     }

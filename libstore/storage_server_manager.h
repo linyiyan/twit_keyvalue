@@ -12,14 +12,19 @@ private:
 private:
 	vector<server_config> storage_servers;
 	
-public:
-	static int storage_server_list_initialized;
 	
+public:
+	void init();
+	static int storage_server_list_initialized;
 		
 public: 
 	static storage_server_manager& instance();
 
+	void init_servers(string );
+	
     server_config& getServerByHashCode(uint32_t);
+    
+    
 
     
 	

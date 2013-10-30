@@ -93,18 +93,32 @@ void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
     	storage_server_manager::storage_server_list_initialized = 2;
     	evbuffer *input = req->input_buffer;
     	char buf[1024];
+    	
+    	ostringstream oss;
     	int n;
     	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
-       		printf("%s\n" , buf);
+    		oss<<buf;
+       		// printf("%s\n" , buf);
     	}
-        printf("success : %u %s\n", req->response_code, req->response_code_line);
-    }
-	
-	
-	
+    	
+    	storage_server_manager::instance().init_servers(oss.str());
+        printf("success : %u %s\n", req->response_code, oss.str().c_str());
+    }	
 }
 
-
+void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
+	evbuffer *input = req->input_buffer;
+	char buf[1024];
+    	
+	ostringstream oss;
+	int n;
+	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
+		oss<<buf;
+       		// printf("%s\n" , buf);
+	}
+	
+	printf("success : %u %s\n", req->response_code, oss.str().c_str());
+}
 
 
 
