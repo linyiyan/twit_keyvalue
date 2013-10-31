@@ -20,8 +20,14 @@ using namespace std;
 #include "storage_server_manager.h"
 #include "handlers.h"
 
+struct twit_server_req{
+	string method;
+	evhttp_request* req;
+	twit_server_req(string m , evhttp_request* r):method(m) , req(r){}
+};	
 
-void send_http_req(const server_config& server , const map<string,string>& params , decltype(twit_store_opr_resp_handler) cb , void* cbArg){
+
+void send_http_req(const server_config& server , const map<string,string>& params , func_t cb , void* cbArg){
 	string uri = "/?";
 	for(auto p : params){
 		uri += p.first + "=" + p.second + "&";
@@ -42,23 +48,25 @@ void send_http_req(const server_config& server , const map<string,string>& param
     event_base_dispatch(base);
 }
 
-void set(storage_server_manager& mgr , string szKey , string szValue){
+void set(storage_server_manager& mgr , string szKey , string szValue , evhttp_request *req){
 	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
 	server_config store_server = mgr.getServerByHashCode(hash);
 	
 	map<string,string> params = {{"method","set"} , {"key",to_string(hash)} , {"value" , szValue}};
 	
-	send_http_req(store_server , params , twit_store_opr_resp_handler , NULL);
+	twit_server_req* pq = new twit_server_req("set",req);
+	send_http_req(store_server , params , twit_store_opr_resp_handler , (void*)pq);
 }
 
-void get(storage_server_manager& mgr , string szKey)
+void get(storage_server_manager& mgr , string szKey , evhttp_request *req)
 {
 	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
 	server_config store_server = mgr.getServerByHashCode(hash);
 	
 	map<string,string> params = {{"method","get"} , {"key",to_string(hash)}};
 	
-	send_http_req(store_server , params , twit_store_opr_resp_handler , NULL);
+	twit_server_req* pq = new twit_server_req("get",req);
+	send_http_req(store_server , params , twit_store_opr_resp_handler , (void*)pq);
 }
 
 
@@ -105,6 +113,8 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 
 
   //HTTP header
+  
+  /* 
   evhttp_add_header(req->output_headers, "Server", "0.0.0.0");
   evhttp_add_header(req->output_headers, "Content-Type", "text/plain; charset=UTF-8");
   evhttp_add_header(req->output_headers, "Connection", "close");
@@ -114,6 +124,7 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
   evbuffer_add_printf(buf, "It works!\n%s\n", oss.str().c_str());
   evhttp_send_reply(req, HTTP_OK, "OK", buf);
   evbuffer_free(buf);
+  */
     
 }
 
@@ -160,7 +171,11 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
        		// printf("%s\n" , buf);
 	}
 	
-	
+	if(arg!=NULL){
+		twit_server_req* req = (twit_server_req*) arg;
+		string method = req->method;
+		evhttp_request* twit_server_resp = req->req;
+	}
 	
 	
 	printf("success : %u %s\n", req->response_code, oss.str().c_str());

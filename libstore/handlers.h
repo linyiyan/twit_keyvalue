@@ -17,8 +17,8 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg);
 
 void send_http_req(const server_config& server , const map<string,string>& params , func_t cb , void* cbArg);
 
-void set(storage_server_manager& mgr , string szKey , string szValue);
+void set(storage_server_manager& mgr , string szKey , string szValue , evhttp_request *req);
 
-void get(storage_server_manager& mgr , string szKey);
+void get(storage_server_manager& mgr , string szKey , evhttp_request *req);
 
 #endif

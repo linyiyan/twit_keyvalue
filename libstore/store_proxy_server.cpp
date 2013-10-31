@@ -31,12 +31,13 @@ int main(int argc, char *argv[]) {
   storage_server_manager& mgr = storage_server_manager::instance();
   mgr.init();
  
+ /*
   set(mgr , "t3" , "test1");
   set(mgr , "t2" , "test2");
   
   get(mgr,"t2");
   get(mgr,"t3");
-  
+  */
   event_init();
   
   evhttp *httpd 
