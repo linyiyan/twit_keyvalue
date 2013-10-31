@@ -6,10 +6,11 @@
 #include <event.h>
 //for http
 #include <evhttp.h>
-
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <map>
 
 
 using namespace std;
@@ -17,6 +18,48 @@ using namespace std;
 #include "twit_hash.h"
 #include "config.h"
 #include "storage_server_manager.h"
+#include "handlers.h"
+
+
+void send_http_req(const server_config& server , const map<string,string>& params , decltype(twit_store_opr_resp_handler) cb , void* cbArg){
+	string uri = "/?";
+	for(auto p : params){
+		uri += p.first + "=" + p.second + "&";
+	}
+	uri = uri.substr(0,uri.size()-1);
+	
+	event_base* base = event_init();
+	const char *addr = server.address.c_str();
+	unsigned int port = server.port;
+	
+	evhttp_connection *conn = evhttp_connection_new(addr, port);
+	evhttp_request *req = evhttp_request_new(cb, cbArg);
+	
+	evhttp_add_header(req->output_headers, "Host", addr);
+    evhttp_add_header(req->output_headers, "Content-Length", "0");
+    
+    evhttp_make_request(conn, req, EVHTTP_REQ_GET, uri.c_str());
+    event_base_dispatch(base);
+}
+
+void set(storage_server_manager& mgr , string szKey , string szValue){
+	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
+	server_config store_server = mgr.getServerByHashCode(hash);
+	
+	map<string,string> params = {{"method","set"} , {"key",to_string(hash)} , {"value" , szValue}};
+	
+	send_http_req(store_server , params , twit_store_opr_resp_handler , NULL);
+}
+
+void get(storage_server_manager& mgr , string szKey)
+{
+	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
+	server_config store_server = mgr.getServerByHashCode(hash);
+	
+	map<string,string> params = {{"method","get"} , {"key",to_string(hash)}};
+	
+	send_http_req(store_server , params , twit_store_opr_resp_handler , NULL);
+}
 
 
 void twit_server_http_req_handler(evhttp_request *req, void *arg) {
@@ -117,6 +160,9 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
        		// printf("%s\n" , buf);
 	}
 	
+	
+	
+	
 	printf("success : %u %s\n", req->response_code, oss.str().c_str());
 }
 
@@ -128,7 +174,59 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
 
 
 
+/*
+void set(storage_server_manager& mgr , string szKey , string szValue)
+{
+	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
+	server_config store_server = mgr.getServerByHashCode(hash);
+	
+	event_base* base = event_init();
+	const char *addr = store_server.address.c_str();
+    unsigned int port = store_server.port;
+	
+	evhttp_connection *conn;
+	evhttp_request *req;
+	
+	conn = evhttp_connection_new(addr, port);
+    evhttp_connection_set_timeout(conn, 5);
+    req = evhttp_request_new(twit_store_opr_resp_handler, (void *)conn);
+    evhttp_add_header(req->output_headers, "Host", addr);
+    evhttp_add_header(req->output_headers, "Content-Length", "0");
+    
+    ostringstream oss;
+    oss<<"/?method=set"<<"&"<<"key="<<hash<<"&"<<"value="<<szValue;
+    evhttp_make_request(conn, req, EVHTTP_REQ_GET, oss.str().c_str());
+	
+	event_base_dispatch(base);
+}
 
+void get(storage_server_manager& mgr , string szKey)
+{
+	unsigned int hash = twit_hash(szKey.c_str() , szKey.size()*sizeof(char) , 0);
+	server_config store_server = mgr.getServerByHashCode(hash);
+	
+	event_base* base = event_init();
+	const char *addr = store_server.address.c_str();
+    unsigned int port = store_server.port;
+	
+	evhttp_connection *conn;
+	evhttp_request *req;
+	
+	conn = evhttp_connection_new(addr, port);
+    evhttp_connection_set_timeout(conn, 5);
+    string szOpr = "get";
+    req = evhttp_request_new(twit_store_opr_resp_handler, (void*)szOpr.c_str());
+    evhttp_add_header(req->output_headers, "Host", addr);
+    evhttp_add_header(req->output_headers, "Content-Length", "0");
+    
+    ostringstream oss;
+    oss<<"/?method=get"<<"&"<<"key="<<hash;
+    evhttp_make_request(conn, req, EVHTTP_REQ_GET, oss.str().c_str());
+	
+	event_base_dispatch(base);
+}
+
+*/
 
 
 
