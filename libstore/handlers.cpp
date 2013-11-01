@@ -24,7 +24,7 @@ using namespace std;
 #include "httpreq_pool.h"
 
 
-
+#define TEST
 
 
 struct twit_server_req{
