@@ -38,7 +38,7 @@ storage_server_manager::storage_server_manager(){
 void storage_server_manager::init(){
 	server_config master = server_config("localhost",8090 , 5);
 	map<string,string> params = {{"method","setup"}};
-	send_http_req(master , params , twit_store_setup_resp_handler , NULL);
+	send_setup_req(master , params , twit_store_setup_resp_handler , NULL);
 	int count = 100;
 	while(count-- > 1){
 		sleep(1);

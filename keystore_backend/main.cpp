@@ -57,6 +57,8 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
     	else oss<<"Here is the data: "<<ck.get_data()<<endl;
     }
     else if(method=="set"){
+    
+    
     	oss<<"Ok, you can set";
     	
     	string szKey = evhttp_find_header(&params , "key");
@@ -80,6 +82,9 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
   	struct evbuffer *buf;
   	buf = evbuffer_new();
   	evbuffer_add_printf(buf, "It works!\n%s\n", oss.str().c_str());
+  	// string reply_uri = string(req->uri) + "tt" ;
+  	// req->uri = const_cast<char*>(reply_uri.c_str());
+  	// cout<<"reply uri: "<<req->uri<<endl;
  	evhttp_send_reply(req, HTTP_OK, "OK", buf);
   	evbuffer_free(buf);
     

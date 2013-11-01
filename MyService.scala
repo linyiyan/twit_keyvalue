@@ -11,32 +11,68 @@ import com.redis._
 import spray.client.pipelining._
 import scala.concurrent._
 import akka.actor.ActorSystem
+import scala.util.control.Breaks._
 
 object TwitStore{
   implicit val system = ActorSystem()
   import system.dispatcher // execution context for futures
+  val lk = new Lock()
 
   val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
   val base_uri = "http://localhost:8080/"
 
-  def get(key : String , cb : MyServiceActor) : Unit = {
-    val uri = base_uri + "?method=get"+"&key="+key
-    val response: Future[HttpResponse] = pipeline(Get(uri))
-    response onComplete {
-      case Success(sth) => cb.print_client_response(sth.toString()); println(sth.toString())
-      case Failure(_) => println("client not reponse")
+  def get(key : String) : String = {
+    var status : Int = 0
+    var res : String = ""
+
+
+    def asyncGet(key : String) : Unit = {
+      val uri = base_uri + "?method=get"+"&key="+key
+      val response: Future[HttpResponse] = pipeline(Get(uri))
+      response onComplete {
+        case Success(sth) => status=1; res = sth.toString()
+        case Failure(_) => status=2
+      }
     }
+    
+   
+    asyncGet(key)
+    
+    breakable{
+      while(true){
+        if(status !=0 ) break
+        Thread.sleep(10)
+      }
+    }
+    
+    res
   }
 
-  def set(key : String , value : String , cb : MyServiceActor) : Unit = {
-    val uri = base_uri + "?method=set"+"&key="+key+"&value="+value
+  def set(key : String , value : String) : Unit = {
+    var status : Int = 0
 
-    val response: Future[HttpResponse] = pipeline(Get(uri))
-    response onComplete {
-      case Success(sth) => cb.print_client_response(sth.toString()); println(sth.toString())
-      case Failure(_) => println("client not reponse")
+    def asyncSet(key : String , value : String) : Unit = {
+      val uri = base_uri + "?method=set"+"&key="+key+"&value="+value
+      println("send uri " + uri)
+      val response: Future[HttpResponse] = pipeline(Get(uri))
+        response onComplete {
+          case Success(sth) => status=1; println(sth.toString())
+          case Failure(_) => status=2; println("client not reponse")
+        }
     }
+
+   
+    asyncSet(key , value)
+   
+    breakable{
+      while(true){
+        if(status!=0) break
+        Thread.sleep(10)
+      }
+    }
+   
   }
+ 
 
 }
 
@@ -65,10 +101,10 @@ class MyServiceActor extends Actor with MyService {
   }
   def construct_id(rawId : String , t : String) : String = {
     val prefix = 
-      if(t=="user") "userId#"
-      else if(t=="subscribeTo") "subscribeTo#"
-      else if(t=="twitCount") "twitCount#"
-      else if(t=="twitId") "twitId#"
+      if(t=="user") "userId-"
+      else if(t=="subscribeTo") "subscribeTo-"
+      else if(t=="twitCount") "twitCount-"
+      else if(t=="twitId") "twitId-"
 
     prefix+rawId
     
@@ -77,20 +113,17 @@ class MyServiceActor extends Actor with MyService {
   def create_user(usrId : String , rc : RedisClient): Unit = {
     val rUsrId = construct_id(usrId , "user")
     println("real user id: " + rUsrId)
-    val v = rc.get(rUsrId)
+
+    val v = TwitStore.get(rUsrId)
     
-    TwitStore.get("t1" , this)
-
-
-    if(v==None) {
+    if(v=="") {
       println("User Not found")
-      rc.set(rUsrId , "welcome")
+      // rc.set(rUsrId , "welcome")
+      TwitStore.set(rUsrId , "welcome")
     }
     else{
-      println("User exists: " + usrId + v.get)
-    }
-
-    
+      println("User exists: " + usrId + v)
+    } 
   }
 
   def addSubscription(usrId : String, subscribeToId : String) : Unit = {
@@ -112,10 +145,6 @@ class MyServiceActor extends Actor with MyService {
     val rUsrId = construct_id(usrId , "subscribeTo")
     val members = rc.smembers(rUsrId)
 
-
-    
-    TwitStore.get("t1" , this)
-
     for{mem <- members.get.toList} yield mem.get
   }
 
@@ -133,8 +162,6 @@ class MyServiceActor extends Actor with MyService {
       val newTwit = new TwitContent(usrId , System.currentTimeMillis/1000 , contents)
       rc.incr(twitCountId)
       rc.set(rTwitId , newTwit.mkSrz)
-
-      TwitStore.set("t1" , "v1" , this)
 
       println("twit posted: "+ rTwitId + " : " + newTwit.mkSrz())
     }
