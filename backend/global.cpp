@@ -8,28 +8,38 @@
 
 using namespace std;
 
+#include "config.h"
 #include "chunk.h"
 #include "slab.h"
 #include "lrulist.h"
-
-
 
 extern vector<Slab> slabs;
 extern unordered_map<unsigned int , pair<unsigned int, unsigned int>> key_to_slab;
 extern unordered_map<unsigned int , LRUList> slab_lru;
 
-void init_slab_lru(unsigned int chunk_num){
-	slab_lru[0] = LRUList(chunk_num);
-	slab_lru[1] = LRUList(chunk_num);
+unsigned int slab_index_by_chunk_size(unsigned int size){
+  slab_config cfg = slab_config("setting");
+
+  for(int i=0 ; i<cfg.slab_settings.size() ; i++){
+    if(i==0 && size<cfg.slab_settings[i].second) return 0;
+    else if(size> cfg.slab_settings[i-1].second && size < cfg.slab_settings[i].second) return i;
+  }
+  
+  return -1;
 }
 
+void init_slab_lru(const slab_config& config){
+
+  for(int i=0 ; i<config.slab_settings.size() ; i++){
+    slab_lru[i] = LRUList(config.slab_settings[i].first);
+  }
+}
 
 
 Chunk get(unsigned int key){
 	if(key_to_slab.find(key)==key_to_slab.end()){
 		return Chunk();
-	}
-	else{
+	}else{
 		auto slab_pair = key_to_slab[key];
 
 		// update lru 
@@ -42,13 +52,13 @@ Chunk get(unsigned int key){
 
 void set(unsigned int key , char* value , unsigned int size){
 
-	unsigned int slab_index = 0;
-	if(size<20){
+  unsigned int slab_index = slab_index_by_chunk_size(size);
+  /* if(size<20){
 		slab_index = 0;		
-	}
-	else if(size<40){
+	}else if(size<40){
 		slab_index = 1;
 	}
+  */
 
 	// get the oldest index from lru
 	LRUList lrulst = slab_lru[slab_index];

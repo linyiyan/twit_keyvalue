@@ -11,6 +11,6 @@ Chunk get(unsigned int key);
 void set(unsigned int key , char* value , unsigned int size);
 void replace(unsigned int key , char* value , unsigned int size);
 
-void init_slab_lru(unsigned int chunk_num);
+void init_slab_lru(const slab_config& config);
 
 #endif

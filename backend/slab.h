@@ -1,6 +1,7 @@
 #ifndef SLAB_H
 #define SLAB_H
 
+
 class Slab{
 private:
 	vector<Chunk> chunks;
@@ -20,6 +21,6 @@ public:
 	void print_chunks(ostream& out);
 };
 
-void slabs_init(vector<Slab>& slabs);
+void slabs_init(const slab_config& config , vector<Slab>& slabs);
 
 #endif

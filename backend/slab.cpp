@@ -4,20 +4,24 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <string>
 
+using std::string;
 using std::vector;
 using std::ostream;
 using std::transform;
 using std::ostream_iterator;
+using std::pair;
 
+#include "config.h"
 #include "chunk.h"
 #include "slab.h"
 
-void slabs_init(vector<Slab>& slabs){
-	// only 20bytes and 40bytes chunks.
-	// each slab with 20 chunks;
+void slabs_init(const slab_config& config, vector<Slab>& slabs){
 
-	slabs = {Slab(20 , 20) , Slab(20 , 40)};
+  for(auto p : config.slab_settings){
+    slabs.push_back(Slab(p.first,p.second));
+  }
 }
 
 void Slab::print_chunks(ostream& out){

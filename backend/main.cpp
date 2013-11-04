@@ -18,6 +18,7 @@ pthread_mutex_t lru_lock;
 
 using namespace std;
 
+#include "config.h"
 #include "chunk.h"
 #include "slab.h"
 #include "lrulist.h"
@@ -56,10 +57,8 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
       else // oss<<"Here is the data: "<<ck.get_data()<<endl;
         oss<<ck.get_data()<<" ";
     }
-    else if(method=="set"){
-    
-      
-      oss<<"Ok, you can set";
+    else if(method=="set"){      
+      // oss<<"Ok, you can set";
       
       string szKey = evhttp_find_header(&params , "key");
       unsigned int key = stol(szKey);
@@ -70,14 +69,14 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
      
     }
     else if(method=="incr"){
-      oss<<"Ok, you can incr";
+      // oss<<"Ok, you can incr";
       
       string szKey = evhttp_find_header(&params , "key");
       unsigned int key = stol(szKey);
       
       Chunk ck = get(key);
       if(!ck.is_valid()) {
-        oss<<"incr data not found. set a new one"<<endl;
+        // oss<<"incr data not found. set a new one"<<endl;
         
         string szKey = evhttp_find_header(&params , "key");
         unsigned int key = stol(szKey);
@@ -85,13 +84,12 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
         string szVal = "1";
         set(key , const_cast<char*>(szVal.c_str()) , szVal.size());
        
-      }
-      else{
+      } else{
         string szData = ck.get_data();
         auto pos = find_if(szData.begin() , szData.end() , [](char& ch){return !isdigit(ch);});
         
         if(pos!=szData.end()){
-          oss<<"data is not an integer"<<endl;
+          // oss<<"data is not an integer"<<endl;
         } else{
           unsigned int iData = stol(szData);
           szData = to_string(iData+1);
@@ -102,8 +100,7 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
       }
 
     } else{
-    	oss<<"Oops, method not supported";
-    	
+    	oss<<"Oops, method not supported";    	
     }
     
     evhttp_add_header(req->output_headers, "Server", "0.0.0.0");
@@ -114,35 +111,30 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
   	struct evbuffer *buf;
   	buf = evbuffer_new();
   	evbuffer_add_printf(buf, "%s", oss.str().c_str());
-  	// string reply_uri = string(req->uri) + "tt" ;
-  	// req->uri = const_cast<char*>(reply_uri.c_str());
-  	// cout<<"reply uri: "<<req->uri<<endl;
  	evhttp_send_reply(req, HTTP_OK, "OK", buf);
   	evbuffer_free(buf);
     
 }
 
 
-
-
 int main(int argc, char **argv)
 {
 	pthread_mutex_init(&lru_lock, NULL); 
 
-	slabs_init(slabs);
-	init_slab_lru(20);
-	
+    slab_config config("setting");
+	// slabs_init(slabs);
+    slabs_init(config , slabs);
+
+	init_slab_lru(config);
 	
 	unsigned short 	port = 0;
 	if(argc<2){
 		cout<<"specify a port"<<endl;
 		return 0;
-	}
-	else if(argc<4){
+	} else if(argc<4){
 		cout<<"specify a port range"<<endl;
 		return 0;
-	}
-	else{
+	} else{
 		string szPort = argv[1];
 		port = stoi(szPort);
 		
@@ -156,29 +148,7 @@ int main(int argc, char **argv)
 			m["port"]=to_string(p);
 			storage_servers.push_back(m);
 		}
-		
-		
-		/* storage_servers.resize(pend-pstart+1);
-		unsigned short p = pstart;
-		generate(storage_servers.begin() , storage_servers.end() , 
-			[&p](){return {{"ip","0.0.0.0"} , {"port" , to_string(p++)}}; });
-			*/ 
 	}
-
-	
-/*
-	for(int i=0 ; i<21 ; i++){
-		ostringstream oss;
-		oss<<"test"<<i;
-		string szVal = oss.str();
-		
-		set(i+1 , const_cast<char*>(szVal.c_str()) , szVal.size());
-		slab_lru[0].print_lru_list(cout);
-		slabs[0].print_chunks(cout);	
-		
-	}
-*/
-
 
 	event_init();
 	evhttp *httpd = evhttp_start("0.0.0.0", port);
@@ -189,50 +159,9 @@ int main(int argc, char **argv)
 	event_dispatch();
   
   	evhttp_free(httpd);  	
-  	
   		
 	return 0;
 }
-
-/*
-
-int success_count = 0;
-int failure_count = 0;
-time_t start,end;
-
-void _reqhandler(struct evhttp_request *req, void *state)
-{
-   printf("in _reqhandler. state == %s\n", (char *) state);
-   if (req == NULL) {
-       printf("timed out!\n");
-       failure_count ++;
-    } else if (req->response_code == 0) {
-    printf("connection refused!\n");
-    failure_count++;
-    } else if (req->response_code != 200) {
-    printf("error: %u %s\n", req->response_code, req->response_code_line);
-    failure_count++;
-    } else {
-    printf("success: %u %s\n", req->response_code, req->response_code_line);
-    success_count++;
-    }
-    evhttp_connection_free((evhttp_connection*)state);
-}
-
-
-event_base* base = event_init();
-  	evhttp_connection *conn;
-  	evhttp_request *req;
-  	conn = evhttp_connection_new("localhost", 8085);
-  	evhttp_connection_set_timeout(conn, 5);
-  	req = evhttp_request_new(_reqhandler, (void *)conn);
-  	event_base_dispatch(base);
-  	
-  	evhttp_add_header(req->output_headers, "Host", "localhost");
-  	evhttp_add_header(req->output_headers, "Content-Length", "0");
-  	evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/?method=createUser&usrId=t8");
-
-*/
 
 
 
