@@ -17,10 +17,10 @@ using namespace std;
 
 #include "twit_hash.h"
 #include "config.h"
-#include "storage_server_manager.h"
+#include "manager.h"
 #include "handlers.h"
 
-#include "httpreq_pool.h"
+#include "req_pool.h"
 
 struct twit_server_req {
 	string method;
@@ -81,39 +81,44 @@ void send_http_req(const server_config& server,
 	evhttp_make_request(conn, entry.req, EVHTTP_REQ_GET, uri.c_str());
 }
 
-void set(storage_server_manager& mgr, string szKey, string szValue,
+void set(server_manager& mgr, string szKey, string szValue,
 		evhttp_request *req) {
 	unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),
 			0);
 	server_config store_server = mgr.getServerByHashCode(hash);
 
-	map < string, string> params = { {"method","set"}, {"key",to_string(hash)}, {"value" , szValue}};
+	map<string, string> params = { { "method", "set" },
+			{ "key", to_string(hash) }, { "value", szValue } };
 
 	twit_server_req* pq = new twit_server_req("set", req);
 	send_http_req(store_server, params, twit_store_opr_resp_handler,
 			(void*) pq);
 }
 
-void get(storage_server_manager& mgr, string szKey, evhttp_request *req) {
+void get(server_manager& mgr, string szKey, evhttp_request *req) {
 	unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),
 			0);
 	server_config store_server = mgr.getServerByHashCode(hash);
 
-	map < string, string> params = { {"method","get"}, {"key",to_string(hash)}};
+	map<string, string> params = { { "method", "get" },
+			{ "key", to_string(hash) } };
 
 	twit_server_req* pq = new twit_server_req("get", req);
 	send_http_req(store_server, params, twit_store_opr_resp_handler,
 			(void*) pq);
 }
 
-void incr(storage_server_manager& mgr , string szKey , evhttp_request *req) {
-  unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),0);
-  server_config store_server = mgr.getServerByHashCode(hash);
-  
-  map < string, string> params = { {"method","incr"}, {"key",to_string(hash)}};
-  
-  twit_server_req* pq = new twit_server_req("incr", req);
-  send_http_req(store_server, params, twit_store_opr_resp_handler, (void*) pq);
+void incr(server_manager& mgr, string szKey, evhttp_request *req) {
+	unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),
+			0);
+	server_config store_server = mgr.getServerByHashCode(hash);
+
+	map<string, string> params = { { "method", "incr" }, { "key", to_string(
+			hash) } };
+
+	twit_server_req* pq = new twit_server_req("incr", req);
+	send_http_req(store_server, params, twit_store_opr_resp_handler,
+			(void*) pq);
 }
 
 void twit_server_http_req_handler(evhttp_request *req, void *arg) {
@@ -135,7 +140,7 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 	string method = evhttp_find_header(&params, "method");
 	oss << "method=" << method << endl;
 
-	storage_server_manager& mgr = storage_server_manager::instance();
+	server_manager& mgr = server_manager::instance();
 	if (method == "get") {
 		string szKey = evhttp_find_header(&params, "key");
 		oss << "key: " << szKey << endl;
@@ -152,10 +157,10 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 		string szVal = evhttp_find_header(&params, "value");
 		oss << "value: " << szVal << endl;
 		set(mgr, szKey, szVal, req);
-	} else if(method == "incr"){
-      string szKey = evhttp_find_header(&params , "key");
-      incr(mgr,szKey,req);
-    } else {
+	} else if (method == "incr") {
+		string szKey = evhttp_find_header(&params, "key");
+		incr(mgr, szKey, req);
+	} else {
 		oss << "unexpected method" << endl;
 	}
 
@@ -163,17 +168,16 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 
 void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
 
-
 	if (req == NULL) {
 		printf("timed out!\n");
 	} else if (req->response_code == 0) {
-		storage_server_manager::storage_server_list_initialized = 1;
+		server_manager::storage_server_list_initialized = 1;
 		printf("connection refused!\n");
 	} else if (req->response_code != 200) {
-		storage_server_manager::storage_server_list_initialized = 1;
+		server_manager::storage_server_list_initialized = 1;
 		printf("error: %u %s\n", req->response_code, req->response_code_line);
 	} else {
-		storage_server_manager::storage_server_list_initialized = 2;
+		server_manager::storage_server_list_initialized = 2;
 		evbuffer *input = req->input_buffer;
 		char buf[1024];
 
@@ -184,7 +188,7 @@ void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
 			// printf("%s\n" , buf);
 		}
 
-		storage_server_manager::instance().init_servers(oss.str());
+		server_manager::instance().init_servers(oss.str());
 		printf("success : %u %s\n", req->response_code, oss.str().c_str());
 	}
 }
@@ -220,13 +224,12 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
 		evhttp_send_reply(twit_server_resp, HTTP_OK, "OK", evbuf);
 		evbuffer_free(evbuf);
 
-	
 		pthread_mutex_lock(&(req->pEntry->pool_entry_lock));
-	
+
 		req->pEntry->req = evhttp_request_new(twit_store_opr_resp_handler,
 				NULL);
 		evhttp_request_own(req->pEntry->req);
-	
+
 		req->pEntry->available = true;
 		pthread_mutex_unlock(&(req->pEntry->pool_entry_lock));
 
@@ -334,4 +337,3 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
  }
 
  */
-

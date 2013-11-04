@@ -1,5 +1,5 @@
-#ifndef HANDLERS_H
-#define HANDLERS_H
+#ifndef HANDLERS_H_
+#define HANDLERS_H_
 
 typedef void (*func_t)(evhttp_request *, void *);
 
@@ -21,9 +21,9 @@ void send_setup_req(const server_config& server,
 void send_http_req(const server_config& server,
 		const map<string, string>& params, func_t cb, void* cbArg);
 
-void set(storage_server_manager& mgr, string szKey, string szValue,
+void set(server_manager& mgr, string szKey, string szValue,
 		evhttp_request *req);
 
-void get(storage_server_manager& mgr, string szKey, evhttp_request *req);
+void get(server_manager& mgr, string szKey, evhttp_request *req);
 
-#endif
+#endif /* HANDLERS_H_ */

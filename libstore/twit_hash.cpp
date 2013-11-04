@@ -527,10 +527,10 @@ uint32_t twit_hash( const void *key, size_t length, const uint32_t initval)
  int main(){
  char* test1 = "hello";
  char* test2 = "world";
- 
+
  uint32_t v1 = hash(test1 , 6 , 2);
  uint32_t v2 = hash(test2 , 6 , 1);
- 
+
  printf("%d %d\n", v1 , v2);
  return 0;
  }

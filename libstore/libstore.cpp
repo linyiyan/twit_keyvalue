@@ -18,10 +18,10 @@ using namespace std;
 
 #include "twit_hash.h"
 #include "config.h"
-#include "storage_server_manager.h"
+#include "manager.h"
 #include "handlers.h"
 
-#include "httpreq_pool.h"
+#include "req_pool.h"
 
 //evhttp_request *greq = NULL;
 //evhttp_request *greq1 = NULL;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
 	server_config twit_server_config("0.0.0.0", 8080, 120);
 
-	storage_server_manager& mgr = storage_server_manager::instance();
+	server_manager& mgr = server_manager::instance();
 	mgr.init();
 
 	//fset(mgr , "t3" , "test1");
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	/*
 	 greq = evhttp_request_new(twit_store_opr_resp_handler, NULL);
 	 greq1 = evhttp_request_new(twit_store_opr_resp_handler, NULL);
-	 
+
 	 evhttp_add_header(greq->output_headers, "Host", "0.0.0.0");
 	 evhttp_add_header(greq->output_headers, "Content-Length", "0");
 	 evhttp_add_header(greq1->output_headers, "Host", "0.0.0.0");

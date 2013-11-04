@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_H_
+#define CONFIG_H_
 
 struct server_config {
 	string address;
@@ -15,4 +15,4 @@ struct server_config {
 	string to_string();
 };
 
-#endif
+#endif /* CONFIG_H_ */

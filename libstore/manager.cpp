@@ -24,19 +24,20 @@ using std::stoi;
 using std::transform;
 using std::mem_fun_ref;
 using std::ostream_iterator;
+
 #include "config.h"
-#include "storage_server_manager.h"
+#include "manager.h"
 #include "handlers.h"
 
-int storage_server_manager::storage_server_list_initialized = 0;
+int server_manager::storage_server_list_initialized = 0;
 
-storage_server_manager::storage_server_manager() {
+server_manager::server_manager() {
 
 }
 
-void storage_server_manager::init() {
+void server_manager::init() {
 	server_config master = server_config("localhost", 8090, 5);
-	map < string, string> params = { {"method","setup"}};
+	map<string, string> params = { { "method", "setup" } };
 	send_setup_req(master, params, twit_store_setup_resp_handler, NULL);
 	int count = 100;
 	while (count-- > 1) {
@@ -52,12 +53,12 @@ void storage_server_manager::init() {
 		printf("setup successful\n");
 }
 
-storage_server_manager& storage_server_manager::instance() {
-	static storage_server_manager inst;
+server_manager& server_manager::instance() {
+	static server_manager inst;
 	return inst;
 }
 
-void storage_server_manager::init_servers(string sz) {
+void server_manager::init_servers(string sz) {
 	istringstream iss(sz);
 	string line;
 	while (getline(iss, line, '\n')) {
@@ -71,7 +72,7 @@ void storage_server_manager::init_servers(string sz) {
 
 }
 
-server_config& storage_server_manager::getServerByHashCode(uint32_t hash_code) {
+server_config& server_manager::getServerByHashCode(uint32_t hash_code) {
 
 	unsigned int server_num = storage_servers.size();
 	int index = 0;
