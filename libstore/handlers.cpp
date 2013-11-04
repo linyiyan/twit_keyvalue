@@ -22,7 +22,6 @@ using namespace std;
 
 #include "httpreq_pool.h"
 
-
 struct twit_server_req {
 	string method;
 	evhttp_request* req;
@@ -58,7 +57,6 @@ void send_setup_req(const server_config& server,
 
 void send_http_req(const server_config& server,
 		const map<string, string>& params, func_t cb, void* cbArg) {
-	cout << "send beg" << endl;
 	string uri = "/?";
 	for (auto p : params) {
 		uri += p.first + "=" + p.second + "&";
@@ -81,12 +79,10 @@ void send_http_req(const server_config& server,
 	pthread_mutex_unlock(&(entry.pool_entry_lock));
 
 	evhttp_make_request(conn, entry.req, EVHTTP_REQ_GET, uri.c_str());
-	cout << "send end" << endl;
 }
 
 void set(storage_server_manager& mgr, string szKey, string szValue,
 		evhttp_request *req) {
-	cout << "in set" << endl;
 	unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),
 			0);
 	server_config store_server = mgr.getServerByHashCode(hash);
@@ -108,6 +104,16 @@ void get(storage_server_manager& mgr, string szKey, evhttp_request *req) {
 	twit_server_req* pq = new twit_server_req("get", req);
 	send_http_req(store_server, params, twit_store_opr_resp_handler,
 			(void*) pq);
+}
+
+void incr(storage_server_manager& mgr , string szKey , evhttp_request *req) {
+  unsigned int hash = twit_hash(szKey.c_str(), szKey.size() * sizeof(char),0);
+  server_config store_server = mgr.getServerByHashCode(hash);
+  
+  map < string, string> params = { {"method","incr"}, {"key",to_string(hash)}};
+  
+  twit_server_req* pq = new twit_server_req("incr", req);
+  send_http_req(store_server, params, twit_store_opr_resp_handler, (void*) pq);
 }
 
 void twit_server_http_req_handler(evhttp_request *req, void *arg) {
@@ -136,9 +142,7 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 		oss << "hashed key: "
 				<< twit_hash(szKey.c_str(), szKey.size() * sizeof(char), 0)
 				<< endl;
-		std::cout << "req from twit_server key: " << szKey << endl;
 		get(mgr, szKey, req);
-		// fget(mgr,szKey);
 	} else if (method == "set") {
 		string szKey = evhttp_find_header(&params, "key");
 		oss << "key: " << szKey << endl;
@@ -147,10 +151,11 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 				<< endl;
 		string szVal = evhttp_find_header(&params, "value");
 		oss << "value: " << szVal << endl;
-		cout << "in handler8" << endl;
 		set(mgr, szKey, szVal, req);
-		//gset(mgr , szKey , szVal);
-	} else {
+	} else if(method == "incr"){
+      string szKey = evhttp_find_header(&params , "key");
+      incr(mgr,szKey,req);
+    } else {
 		oss << "unexpected method" << endl;
 	}
 
@@ -158,9 +163,7 @@ void twit_server_http_req_handler(evhttp_request *req, void *arg) {
 
 void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
 
-	if (req->kind == EVHTTP_RESPONSE) {
-		printf("it's response\n");
-	}
+
 	if (req == NULL) {
 		printf("timed out!\n");
 	} else if (req->response_code == 0) {
@@ -187,10 +190,8 @@ void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
 }
 
 void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
-	cout << "begin opr" << endl;
 
 	evbuffer *input = req->input_buffer;
-	cout << "end opr" << endl;
 	char buf[1024];
 
 	ostringstream oss;
@@ -198,7 +199,6 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
 
 	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
 		oss << buf;
-		printf("%s\n", buf);
 	}
 
 	if (arg != NULL) {
@@ -216,26 +216,21 @@ void twit_store_opr_resp_handler(evhttp_request *req, void *arg) {
 
 		struct evbuffer *evbuf;
 		evbuf = evbuffer_new();
-		evbuffer_add_printf(evbuf, "It works!\n%s\n", oss.str().c_str());
+		evbuffer_add_printf(evbuf, "%s", oss.str().c_str());
 		evhttp_send_reply(twit_server_resp, HTTP_OK, "OK", evbuf);
 		evbuffer_free(evbuf);
 
-		//cout<<"before free"<<endl;
+	
 		pthread_mutex_lock(&(req->pEntry->pool_entry_lock));
-		//evhttp_request_free(req->pEntry->req);
-		//cout<<"end free"<<endl;
-
-		//cout<<"before new"<<endl;
+	
 		req->pEntry->req = evhttp_request_new(twit_store_opr_resp_handler,
 				NULL);
 		evhttp_request_own(req->pEntry->req);
-		//cout<<"end free"<<endl;
+	
 		req->pEntry->available = true;
 		pthread_mutex_unlock(&(req->pEntry->pool_entry_lock));
 
 	}
-
-	printf("success : %u %s\n", req->response_code, oss.str().c_str());
 }
 
 /*

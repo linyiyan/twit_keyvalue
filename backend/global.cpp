@@ -65,10 +65,24 @@ void set(unsigned int key , char* value , unsigned int size){
 	// replace the oldest value with new value and the global hashed key
 	slabs[slab_index][oldest_index].set(value , key);
 
+    slabs[slab_index].print_chunks(cout);
+
 	// update key_to_slab
 	key_to_slab.insert(make_pair(key , make_pair(slab_index , oldest_index)));
 
 	// update lru
 	LRUList& lst = slab_lru[slab_index];
 	lst.drag_to_front(oldest_index);
+}
+
+void replace(unsigned int key , char* value , unsigned int size){
+  auto slab_pair = key_to_slab[key];
+
+  // update lru 
+  LRUList& lst = slab_lru[slab_pair.first];
+  lst.drag_to_front(slab_pair.second);
+
+  slabs[slab_pair.first].print_chunks(cout);
+  
+  slabs[slab_pair.first][slab_pair.second].set(value , size);
 }

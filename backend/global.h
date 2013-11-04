@@ -9,6 +9,7 @@ unordered_map<unsigned int , LRUList> slab_lru;
 
 Chunk get(unsigned int key);
 void set(unsigned int key , char* value , unsigned int size);
+void replace(unsigned int key , char* value , unsigned int size);
 
 void init_slab_lru(unsigned int chunk_num);
 

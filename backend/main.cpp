@@ -27,51 +27,83 @@ using namespace std;
 
 void libstore_http_req_handler(evhttp_request *req, void *arg) {
 	
-	string szUri = evhttp_request_uri(req);
-	string szDecodedUri = evhttp_decode_uri(szUri.c_str());
-	evkeyvalq params;
-    evhttp_parse_query(szDecodedUri.c_str(), &params);
-    string method = evhttp_find_header(&params , "method");
+  string szUri = evhttp_request_uri(req);
+  string szDecodedUri = evhttp_decode_uri(szUri.c_str());
+  evkeyvalq params;
+  evhttp_parse_query(szDecodedUri.c_str(), &params);
+  string method = evhttp_find_header(&params , "method");
     
-    
-    ostringstream oss;
+  
+  ostringstream oss;
     if(method=="setup"){
-    	oss<<"send you a list of servers"<<endl;
-    	cout<<"welcome, send you a list"<<endl;
-    	
+      oss<<"send you a list of servers"<<endl;
+      cout<<"welcome, send you a list"<<endl;
+      
     	transform(storage_servers.begin() , storage_servers.end() , 
-    	ostream_iterator<string>(oss , "\n"),
-    	[](map<string,string>& m){return m["ip"]+":"+m["port"];});
+                  ostream_iterator<string>(oss , "\n"),
+                  [](map<string,string>& m){return m["ip"]+":"+m["port"];});
     	
     }
     else if(method=="get"){
-    	oss<<"Ok, you can get."<<endl;
-    	cout<<"want to get"<<endl;
+      // oss<<"Ok, you can get."<<endl;
     	
-    	string szKey = evhttp_find_header(&params , "key");
-    	unsigned int key = stol(szKey);
+      string szKey = evhttp_find_header(&params , "key");
+      unsigned int key = stol(szKey);
+      
+      Chunk ck = get(key);
     	
-    	Chunk ck = get(key);
-    	
-    	if(!ck.is_valid()) oss<<"But data not found."<<endl;
-    	else oss<<"Here is the data: "<<ck.get_data()<<endl;
+      if(!ck.is_valid()) oss<<"";// oss<<"But data not found."<<endl;
+      else // oss<<"Here is the data: "<<ck.get_data()<<endl;
+        oss<<ck.get_data()<<" ";
     }
     else if(method=="set"){
     
-    
-    	oss<<"Ok, you can set";
+      
+      oss<<"Ok, you can set";
+      
+      string szKey = evhttp_find_header(&params , "key");
+      unsigned int key = stol(szKey);
+        
+      string szVal = evhttp_find_header(&params , "value");
     	
-    	string szKey = evhttp_find_header(&params , "key");
-    	unsigned int key = stol(szKey);
-    	
-    	string szVal = evhttp_find_header(&params , "value");
-    	
-    	set(key , const_cast<char*>(szVal.c_str()) , szVal.size());
-    	cout<<"want to set"<<endl;
+      set(key , const_cast<char*>(szVal.c_str()) , szVal.size());
+     
     }
-    else{
+    else if(method=="incr"){
+      oss<<"Ok, you can incr";
+      
+      string szKey = evhttp_find_header(&params , "key");
+      unsigned int key = stol(szKey);
+      
+      Chunk ck = get(key);
+      if(!ck.is_valid()) {
+        oss<<"incr data not found. set a new one"<<endl;
+        
+        string szKey = evhttp_find_header(&params , "key");
+        unsigned int key = stol(szKey);
+
+        string szVal = "1";
+        set(key , const_cast<char*>(szVal.c_str()) , szVal.size());
+       
+      }
+      else{
+        string szData = ck.get_data();
+        auto pos = find_if(szData.begin() , szData.end() , [](char& ch){return !isdigit(ch);});
+        
+        if(pos!=szData.end()){
+          oss<<"data is not an integer"<<endl;
+        } else{
+          unsigned int iData = stol(szData);
+          szData = to_string(iData+1);
+          replace(key , const_cast<char*>(szData.c_str()) , szData.size());
+               
+        }
+        
+      }
+
+    } else{
     	oss<<"Oops, method not supported";
-    	cout<<"unexpected method"<<endl;
+    	
     }
     
     evhttp_add_header(req->output_headers, "Server", "0.0.0.0");
@@ -81,7 +113,7 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
   	
   	struct evbuffer *buf;
   	buf = evbuffer_new();
-  	evbuffer_add_printf(buf, "It works!\n%s\n", oss.str().c_str());
+  	evbuffer_add_printf(buf, "%s", oss.str().c_str());
   	// string reply_uri = string(req->uri) + "tt" ;
   	// req->uri = const_cast<char*>(reply_uri.c_str());
   	// cout<<"reply uri: "<<req->uri<<endl;

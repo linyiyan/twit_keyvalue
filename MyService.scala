@@ -30,7 +30,7 @@ object TwitStore{
       val uri = base_uri + "?method=get"+"&key="+key
       val response: Future[HttpResponse] = pipeline(Get(uri))
       response onComplete {
-        case Success(sth) => status=1; res = sth.toString()
+        case Success(sth) => status=1; res = sth.entity.asString.trim()//.substring(0,sth.entity.asString.indexOf(";"))
         case Failure(_) => status=2
       }
     }
@@ -73,7 +73,30 @@ object TwitStore{
    
   }
  
+  def incr(key : String) : Unit = {
+    var status : Int = 0
 
+    def asyncIncr(key : String) : Unit = {
+      val uri = base_uri + "?method=incr"+"&key="+key
+      println("send uri " + uri)
+      val response: Future[HttpResponse] = pipeline(Get(uri))
+      response onComplete {
+        case Success(sth) => status=1; println(sth.toString())
+        case Failure(_) => status=2; println("client not reponse")
+      }
+    }
+
+
+    asyncIncr(key)
+
+    breakable{
+      while(true){
+        if(status!=0) break
+        Thread.sleep(10)
+      }
+
+    }
+  }
 }
 
 
@@ -155,32 +178,38 @@ class MyServiceActor extends Actor with MyService {
     }
     else {
       val twitCountId = construct_id(usrId , "twitCount")
-      val twitCount = rc.get(twitCountId)
-      val newTwitCount = if(twitCount.isEmpty) 1 else twitCount.get.toInt
-      val rawTwitId = usrId + "#" + newTwitCount
+      // val twitCount = rc.get(twitCountId)
+      val twitCount = TwitStore.get(twitCountId)
+      val newTwitCount = if(!twitCount.forall(_.isDigit) || twitCount=="") 1 else twitCount.toInt+1
+      val rawTwitId = usrId + "--" + newTwitCount
       val rTwitId = construct_id(rawTwitId , "twitId")
       val newTwit = new TwitContent(usrId , System.currentTimeMillis/1000 , contents)
-      rc.incr(twitCountId)
-      rc.set(rTwitId , newTwit.mkSrz)
-
+      // rc.incr(twitCountId)
+      TwitStore.incr(twitCountId)
+      // rc.set(rTwitId , newTwit.mkSrz)
+      TwitStore.set(rTwitId , newTwit.mkSrz)
       println("twit posted: "+ rTwitId + " : " + newTwit.mkSrz())
     }
   }
 
   def getTwits(usrId : String) : List[TwitContent] = {
     val twitCountId = construct_id(usrId , "twitCount")
-    val twitCount = rc.get(twitCountId)
-    if (twitCount.isEmpty) Nil
+    val twitCount = TwitStore.get(twitCountId)
+    if (!twitCount.forall(_.isDigit)) Nil
     else{
+      println("twitCount: " + twitCount)
       for {
-        i <- (1 to twitCount.get.toInt).toList
-        preTwitId = usrId + "#" + i
+        i <- (1 to twitCount.toInt).toList
+        preTwitId = usrId + "--" + i
         rTwitId = construct_id(preTwitId , "twitId")
         void = println("get twit : " + rTwitId)
-        twit = rc.get(rTwitId)
+        // twit = rc.get(rTwitId)
+        twit = TwitStore.get(rTwitId)
+        void1 = println(twit)
         if(!twit.isEmpty)
       }
-      yield new TwitContent(twit.get)
+      // yield new TwitContent(twit.get)
+      yield new TwitContent(twit)
     }
    
   }

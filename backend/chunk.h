@@ -23,6 +23,8 @@ class Chunk{
 	bool is_valid() {return data!=NULL;}
 	
 	char* get_data(){return data;}
+
+    unsigned int  get_data_size(){return size;}
 };
 
 #endif
