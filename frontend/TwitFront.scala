@@ -42,7 +42,7 @@ class TwitFront extends Actor {
     
   }
  
-  def create_user(usrId : String , rc : RedisClient): Unit = {
+  def createUser(usrId : String): Unit = {
     val rUsrId = construct_id(usrId , "user")
     println("real user id: " + rUsrId)
 
@@ -78,12 +78,6 @@ class TwitFront extends Actor {
     }
   }
 
-/*
-  def removeSubscription(usrId : String, subscribeToId : String , rc : RedisClient) : Unit = {
-    val rUsrId = construct_id(usrId , "subscribeTo")
-    rc.srem(rUsrId , subscribeToId)
-  }
-*/
   def getSubscription(usrId : String) : List[String] = {
     val rUsrId = construct_id(usrId , "subscribeTo")
    
@@ -161,28 +155,27 @@ class TwitFront extends Actor {
   def process_request(r : HttpRequest) : Unit = {
     val method = r.uri.query.get("method")
     val usrId = r.uri.query.get("usrId")
-    val subscribeTo = if(method==Some("addSubscription")
-							|| method==Some("removeSubscription")) r.uri.query.get("subscribeTo") else Some("")
-    val content = if(method==Some("postTwit")) r.uri.query.get("content") else Some("")
+    val subscribeTo = 
+      if(method==Some("addSubscription")|| method==Some("removeSubscription")) 
+        r.uri.query.get("subscribeTo") else Some("")
+    val content = 
+      if(method==Some("postTwit"))
+        r.uri.query.get("content") else Some("")
 
-    if("createUser"==method.get) create_user(usrId.get , rc)
+    if("createUser"==method.get) createUser(usrId.get)
     else if("postTwit"==method.get) postTwit(usrId.get , content.get)
     else if("getTwits"==method.get) println(getTwits(usrId.get))
     else if("addSubscription"==method.get) addSub(usrId.get , subscribeTo.get)
     else if("getSubscription"==method.get) println(getSubscription(usrId.get))
     else if("getTwitsBySubscription"==method.get) println(getTwitsBySubscription(usrId.get))
-    else if("clearDB"==method.get) rc.flushdb
   }
 
   def receive = {
 	case _ : Http.Connected => sender ! Http.Register(self)
-	case r@HttpRequest(GET,_,_,_,_) => {
-      
-      process_request(r)
-      
+	case r@HttpRequest(GET,_,_,_,_) => {      
+      process_request(r)      
       sender ! index
 	}
-
   }
   
   lazy val index = HttpResponse(

@@ -40,10 +40,9 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
       oss<<"send you a list of servers"<<endl;
       cout<<"welcome, send you a list"<<endl;
       
-    	transform(storage_servers.begin() , storage_servers.end() , 
-                  ostream_iterator<string>(oss , "\n"),
-                  [](map<string,string>& m){return m["ip"]+":"+m["port"];});
-    	
+      transform(storage_servers.begin() , storage_servers.end() , 
+                ostream_iterator<string>(oss , "\n"),
+                [](map<string,string>& m){return m["ip"]+":"+m["port"];});  	
     }
     else if(method=="get"){
       // oss<<"Ok, you can get."<<endl;
@@ -110,7 +109,7 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
   	
   	struct evbuffer *buf;
   	buf = evbuffer_new();
-  	evbuffer_add_printf(buf, "%s", oss.str().c_str());
+  	evbuffer_add_printf(buf, "%s%c", oss.str().c_str() , '\0');
  	evhttp_send_reply(req, HTTP_OK, "OK", buf);
   	evbuffer_free(buf);
     
