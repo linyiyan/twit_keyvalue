@@ -4,7 +4,7 @@
 
 class Slab{
 private:
-	vector<Chunk> chunks;
+  vector<Chunk> chunks;
 
 public:
 	Slab() {}
@@ -13,7 +13,8 @@ public:
 			chunks.push_back(Chunk(chunk_size));
 		}
 	}
-	Chunk& operator[] (unsigned int i) {return chunks[i];}
+
+    Chunk& operator[] (unsigned int i) {return chunks[i];}
 	const Chunk& operator[] (unsigned int i) const {return chunks[i];}
 	
 	size_t size() {return chunks.size();}

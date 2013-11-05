@@ -62,7 +62,7 @@ void set(unsigned int key , char* value , unsigned int size){
   
   // get the associated global key_to_slab key for the oldest chunk;
   unsigned int hashed_key = slabs[slab_index][oldest_index].get_hash();
-	// remove it from global key_to_slab map
+  // remove it from global key_to_slab map
   if(hashed_key!=0) // if the chunk is not free
     key_to_slab.erase(hashed_key);
 	
