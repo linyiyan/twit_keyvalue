@@ -185,10 +185,16 @@ void twit_store_setup_resp_handler(evhttp_request *req, void *arg) {
 		int n;
 		while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
 			oss << buf;
-			// printf("%s\n" , buf);
 		}
+        
+        string resp_entity = oss.str();
+        auto pos = resp_entity.find("|");
+        if(pos!=string::npos){
+          string szDur = resp_entity.substr(0 , pos);
+          resp_entity = resp_entity.substr(pos+1);
+        }
 
-		server_manager::instance().init_servers(oss.str());
+		server_manager::instance().init_servers(resp_entity);
 		printf("success : %u %s\n", req->response_code, oss.str().c_str());
 	}
 }
