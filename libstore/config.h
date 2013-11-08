@@ -6,7 +6,7 @@ struct server_config {
 	int port;
 	int timeout; //in seconds
 
-	server_config() {
+	server_config() : address(""),port(0),timeout(0){
 	}
 	server_config(string addr, int p, int t) :
 			address(addr), port(p), timeout(t) {

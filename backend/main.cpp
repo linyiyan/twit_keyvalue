@@ -37,9 +37,10 @@ void libstore_http_req_handler(evhttp_request *req, void *arg) {
   
   ostringstream oss;
     if(method=="setup"){
-      oss<<"send you a list of servers"<<endl;
+      //oss<<"send you a list of servers"<<endl;
       cout<<"welcome, send you a list"<<endl;
       
+      oss<<5<<"|";
       transform(storage_servers.begin() , storage_servers.end() , 
                 ostream_iterator<string>(oss , "\n"),
                 [](map<string,string>& m){return m["ip"]+":"+m["port"];});  	

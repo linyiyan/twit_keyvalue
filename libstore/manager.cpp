@@ -32,7 +32,7 @@ using std::ostream_iterator;
 int server_manager::storage_server_list_initialized = 0;
 
 server_manager::server_manager() {
-
+	lease_duration = 0;
 }
 
 void server_manager::init() {
@@ -58,7 +58,6 @@ server_manager& server_manager::instance() {
 	return inst;
 }
 
-
 void server_manager::init_servers(string sz) {
 	istringstream iss(sz);
 	string line;
@@ -73,8 +72,12 @@ void server_manager::init_servers(string sz) {
 
 }
 
-void server_manager::set_lease_duration(unsigned long dur){
-  this->lease_duration = dur;
+void server_manager::set_lease_duration(unsigned long dur) {
+	this->lease_duration = dur;
+}
+
+unsigned long server_manager::get_lease_duration() {
+	return lease_duration;
 }
 
 server_config& server_manager::getServerByHashCode(uint32_t hash_code) {
@@ -83,11 +86,7 @@ server_config& server_manager::getServerByHashCode(uint32_t hash_code) {
 	int index = 0;
 	double dhash_code = hash_code;
 	for (; index < server_num; index++) {
-		if (dhash_code
-				> (double) index / (double) (server_num) * (double) UINT_MAX
-				&& dhash_code
-						< ((double) (index + 1) / (double) server_num)
-								* (double) UINT_MAX)
+		if (dhash_code > (double) index / (double) (server_num) * (double) UINT_MAX && dhash_code < ((double) (index + 1) / (double) server_num) * (double) UINT_MAX)
 			break;
 
 	}

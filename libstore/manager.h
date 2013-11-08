@@ -1,6 +1,8 @@
 #ifndef MANAGER_H_
 #define MANAGER_H_
 
+
+
 class server_manager {
 private:
 	server_manager();
@@ -23,6 +25,7 @@ public:
 
 	void init_servers(string);
     void set_lease_duration(unsigned long dur);
+    unsigned long get_lease_duration();
 
 	server_config& getServerByHashCode(uint32_t);
 
