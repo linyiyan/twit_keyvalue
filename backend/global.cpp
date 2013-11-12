@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iostream>
 #include <pthread.h>
+#include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -13,9 +15,12 @@ using namespace std;
 #include "slab.h"
 #include "lrulist.h"
 
-extern vector<Slab> slabs;
-extern unordered_map<unsigned int , pair<unsigned int, unsigned int>> key_to_slab;
-extern unordered_map<unsigned int , LRUList> slab_lru;
+
+vector<map<string,string>> storage_servers;
+vector<Slab> slabs;
+unordered_map<unsigned int , pair<unsigned int, unsigned int>> key_to_slab;
+unordered_map<unsigned int , LRUList> slab_lru;
+
 
 unsigned int slab_index_by_chunk_size(unsigned int size){
   slab_config cfg = slab_config("setting");
@@ -58,8 +63,6 @@ void set(unsigned int key , char* value , unsigned int size){
   LRUList lrulst = slab_lru[slab_index];
   unsigned int oldest_index = lrulst.get_oldest();
   
-  cout<<"oldest index: "<<oldest_index<<endl;
-  
   // get the associated global key_to_slab key for the oldest chunk;
   unsigned int hashed_key = slabs[slab_index][oldest_index].get_hash();
   // remove it from global key_to_slab map
@@ -89,4 +92,15 @@ void replace(unsigned int key , char* value , unsigned int size){
   slabs[slab_pair.first].print_chunks(cout);
   
   slabs[slab_pair.first][slab_pair.second].set(value , size);
+}
+
+void logStatus(string log){
+#define STDOUT_LOG
+
+#ifdef STDOUT_LOG
+	ostream& out = cout;
+#elif defined LOGFILE_LOG
+	ofstream& out = ofstream("backend_log" , ios::app);
+#endif
+	out<<log<<endl;
 }

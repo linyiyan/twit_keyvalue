@@ -2,17 +2,14 @@
 #define GLOBAL_H
 
 
-vector<map<string,string>> storage_servers;
-
-vector<Slab> slabs;
-unordered_map<unsigned int , pair<unsigned int, unsigned int>> key_to_slab;
-unordered_map<unsigned int , LRUList> slab_lru;
-
-
 Chunk get(unsigned int key);
 void set(unsigned int key , char* value , unsigned int size);
 void replace(unsigned int key , char* value , unsigned int size);
-
 void init_slab_lru(const slab_config& config);
+
+
+void logStatus(string log);
+
+
 
 #endif

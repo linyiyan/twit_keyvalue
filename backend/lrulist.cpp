@@ -66,13 +66,14 @@ void LRUList::drag_to_front(unsigned int& elem){
   pthread_mutex_unlock(&lru_lock);
 }
 
+/*
 void LRUList::print_lru_list(ostream& out){
   pthread_mutex_lock(&lru_lock);	
   copy(lst.begin() , lst.end() , ostream_iterator<unsigned int>(out , "  "));
   cout<<endl;
   pthread_mutex_unlock(&lru_lock);
 }
-
+*/
 
 
 

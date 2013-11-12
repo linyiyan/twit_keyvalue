@@ -15,7 +15,7 @@ class LRUList{
 
 	void drag_to_front(unsigned int& elem); // drag the elem in list to the front.
 	
-	void print_lru_list(ostream& out);	
+	/* void print_lru_list(ostream& out); */
 };
 
 
