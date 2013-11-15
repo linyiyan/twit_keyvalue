@@ -12,3 +12,13 @@ For both backend and libstore, just compile with C++11.
 
 For the scala front-end, you can run using sbt
 > sbt run
+
+### Test
+To test the backend key-value storage, you can send certain http request to the front-end which implements a simple post-publish application. Here are some examples.
+
+- Create a user
+> curl "http://localhost:8085/?method=createUser&usrId=usr1"
+- Post a message
+> "http://localhost:8085/?method=postTwit&usrId=usr1&content=hello"
+- Get posted messages
+> curl "http://localhost:8085/?method=getTwits&usrId=usr1"
