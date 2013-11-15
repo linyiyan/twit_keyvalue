@@ -14,11 +14,15 @@ For the scala front-end, you can run using sbt
 > sbt run
 
 ### Test
-To test the backend key-value storage, you can send certain http request to the front-end which implements a simple post-publish application. Here are some examples.
+To test the backend key-value storage, you can send certain http request to the front-end which implements a simple post-subscribe application. Here are some examples.
 
 - Create a user
-	> curl "http://localhost:8085/?method=createUser&usrId=usr1"
+	- curl "http://localhost:8085/?method=createUser&usrId=usr1"
 - Post a message
-	> "http://localhost:8085/?method=postTwit&usrId=usr1&content=hello"
+	- curl "http://localhost:8085/?method=postTwit&usrId=usr1&content=hello"
 - Get posted messages
-	> curl "http://localhost:8085/?method=getTwits&usrId=usr1"
+	- curl "http://localhost:8085/?method=getTwits&usrId=usr1"
+- Subscribe to another user
+	- curl "http://localhost:8085/?method=addSubscription&usrId=usr1&subscribeTo=usr2"
+- Get messages from subscriptions
+	- curl "http://localhost:8085/?method=getTwitsBySubscription&usrId=usr1"
