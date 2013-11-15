@@ -7,9 +7,9 @@
 #include <pthread.h>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <map>
 #include <iterator>
-
 #include <event.h>
 #include <evhttp.h>
 
@@ -40,25 +40,28 @@ int main(int argc, char **argv)
 	
 	unsigned short 	port = 0;
 	if(argc<2){
+		cout<<"specify a server address file"<<endl;
+		return 0;
+	} else if(argc<3){
 		cout<<"specify a port"<<endl;
-		return 0;
-	} else if(argc<4){
-		cout<<"specify a port range"<<endl;
-		return 0;
-	} else{
-		string szPort = argv[1];
-		port = stoi(szPort);
-		
-		string szLower = argv[2]; // lower bound of ports
-		string szUpper = argv[3]; // uppper bound of ports
-		
-		unsigned short pstart = stoi(szLower), pend = stoi(szUpper);
-		for(unsigned short p=pstart ; p<=pend ; p++){
+	}
+	else{
+		ifstream in(argv[1]);
+		while(!in.eof()){
+			string szIp = "", szPort = "";
+			in>>szIp>>szPort;
+
+			if(szIp=="" || szPort=="") continue;
+
 			map<string,string> m;
-			m["ip"]="0.0.0.0";
-			m["port"]=to_string(p);
+			m["ip"] = szIp;
+			m["port"] = szPort;
+
 			storage_servers.push_back(m);
 		}
+
+		string szPort = argv[2];
+		port = stoi(szPort);
 	}
 
 	event_init();
