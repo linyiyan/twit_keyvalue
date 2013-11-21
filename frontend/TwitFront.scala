@@ -2,6 +2,7 @@ package com.example
 
 import scala.util.{Success, Failure}
 import akka.actor.Actor
+import akka.actor.ActorRef
 import spray.routing._
 import spray.http._
 import MediaTypes._
@@ -42,7 +43,7 @@ class TwitFront extends Actor {
     
   }
  
-  def createUser(usrId : String): Unit = {
+  def createUser(usrId : String): Boolean = {
     val rUsrId = construct_id(usrId , "user")
     println("real user id: " + rUsrId)
 
@@ -50,16 +51,19 @@ class TwitFront extends Actor {
     
     if(v=="") {
       println("User Not found")
-      TwitStore.set(rUsrId , "welcome")
+      val status = TwitStore.set(rUsrId , "welcome")
+      status == 200 // http response code is 200
     }
     else{
-      println("User exists: " + usrId + v)
+      // println("User exists: " + usrId + v)
+      false
     } 
   }
 
-  def addSub(usrId : String, subToId : String) : Unit = {
+  def addSub(usrId : String, subToId : String) : Boolean = {
     if(subToId==""){
-      println("add subscription: subscribeToId cannot be empty")
+      false
+      // println("add subscription: subscribeToId cannot be empty")
     }
     else{
       val rUsrId = construct_id(usrId , "user")
@@ -72,9 +76,10 @@ class TwitFront extends Actor {
       val rawSubToId = usrId + "--" + newSubToCount
       val rSubToId = construct_id(rawSubToId , "subTo")
 
-      TwitStore.incr(subToCountId)
-      TwitStore.set(rSubToId , subToId)
+      val istatus = TwitStore.incr(subToCountId)
+      val sstatus = TwitStore.set(rSubToId , subToId)
       
+      istatus==200 && sstatus==200
     }
   }
 
@@ -97,10 +102,10 @@ class TwitFront extends Actor {
 
   }
 
-  def postTwit(usrId : String , contents : String) : Unit = {
+  def postTwit(usrId : String , contents : String) : Boolean= {
     val rUsrId = construct_id(usrId , "user")
     if(rUsrId.isEmpty){
-      println("user not exist, twit not posted")
+      false
     }
     else {
       val twitCountId = construct_id(usrId , "twitCount")
@@ -109,9 +114,10 @@ class TwitFront extends Actor {
       val rawTwitId = usrId + "--" + newTwitCount
       val rTwitId = construct_id(rawTwitId , "twitId")
       val newTwit = new TwitContent(usrId , System.currentTimeMillis/1000 , contents)
-      TwitStore.incr(twitCountId)
-      TwitStore.set(rTwitId , newTwit.mkSrz)
-      println("twit posted: "+ rTwitId + " : " + newTwit.mkSrz())
+      val istatus = TwitStore.incr(twitCountId)
+      val sstatus = TwitStore.set(rTwitId , newTwit.mkSrz)
+
+      istatus==200 && sstatus==200
     }
   }
 
@@ -152,7 +158,7 @@ class TwitFront extends Actor {
   }
 
 
-  def process_request(r : HttpRequest) : Unit = {
+  def process_request(r : HttpRequest , sender : ActorRef) : Unit = {
     val method = r.uri.query.get("method")
     val usrId = r.uri.query.get("usrId")
     val subscribeTo = 
@@ -162,29 +168,57 @@ class TwitFront extends Actor {
       if(method==Some("postTwit"))
         r.uri.query.get("content") else Some("")
 
-    if("createUser"==method.get) createUser(usrId.get)
-    else if("postTwit"==method.get) postTwit(usrId.get , content.get)
-    else if("getTwits"==method.get) println(getTwits(usrId.get))
-    else if("addSubscription"==method.get) addSub(usrId.get , subscribeTo.get)
-    else if("getSubscription"==method.get) println(getSubscription(usrId.get))
-    else if("getTwitsBySubscription"==method.get) println(getTwitsBySubscription(usrId.get))
+    if("createUser"==method.get) {
+      if(createUser(usrId.get)){
+        sender ! HttpResponse(entity = HttpEntity(`text/html` , usrId.get + " created\n"))
+      }
+      else{
+        sender ! HttpResponse(entity = HttpEntity(`text/html` , usrId.get + " not created\n"))
+      }
+    }
+    else if("postTwit"==method.get) {
+      if(postTwit(usrId.get , content.get)){
+        sender ! HttpResponse(entity = HttpEntity(`text/html` , usrId.get + " twit posted: " + content.get + "\n"))
+      }
+      else
+        sender ! HttpResponse(entity = HttpEntity(`text/html` , usrId.get + " twit not posted\n"))
+    }
+    else if("getTwits"==method.get) {
+      val twitLst = getTwits(usrId.get)
+      val twitLstStr = twitLst.foldLeft("")((res,twit) => res+"\n"+twit.mkSrz)
+      sender ! HttpResponse(entity = HttpEntity(`text/html` , "The twits posted by " + usrId.get + ":\n" + twitLstStr + "\n"))
+    }
+    else if("addSubscription"==method.get) {
+       if(addSub(usrId.get , subscribeTo.get)){
+         sender ! HttpResponse(entity = HttpEntity(`text/html` , "subscription from " + usrId.get + "to " + subscribeTo  + " created\n"))
+       }
+      else{
+        sender ! HttpResponse(entity = HttpEntity(`text/html` , "subscription from " + usrId.get + "to " + subscribeTo  + " not created\n"))
+      }
+    }
+    else if("getSubscription"==method.get) {
+      val subLst = getSubscription(usrId.get)
+      val subLstStr = subLst.foldLeft("")((res,sub) => res + "\n" + sub)
+
+      sender ! HttpResponse(entity = HttpEntity(`text/html` , "Subscription by " + usrId.get + "is :\n"+ subLstStr + "\n"))
+    }
+    else if("getTwitsBySubscription"==method.get) {
+      val twitLst = getTwitsBySubscription(usrId.get)
+      val twitLstStr = twitLst.foldLeft("")((res,twit) => res+"\n"+twit.mkSrz)
+      
+      sender ! HttpResponse(entity = HttpEntity(`text/html` , "The twits of " + usrId.get + " by subscription "  + "are :\n"+ twitLstStr + "\n"))
+    }
   }
 
   def receive = {
 	case _ : Http.Connected => sender ! Http.Register(self)
 	case r@HttpRequest(GET,_,_,_,_) => {      
-      process_request(r)      
+      process_request(r , sender)      
       sender ! index
 	}
   }
   
   lazy val index = HttpResponse(
-	entity = HttpEntity(`text/html`,
-		<html>
-		  <body>
-			<h1>Say hello to <i>spray-routing</i> on <i>spray-can</i>!</h1>
-		  </body>
-		</html>.toString()
-	)
+	entity = HttpEntity(`text/html`,"Hello")
   )
 }

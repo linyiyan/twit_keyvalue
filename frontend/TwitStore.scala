@@ -29,14 +29,17 @@ object TwitStore{
     response.entity.asString.trim()
   }
 
-  def set(key : String , value : String) : Unit = {
+  def set(key : String , value : String) : Int = {
     val uri = base_uri + "?method=set"+"&key="+key+"&value="+value
-    Await.ready(pipeline(Get(uri)) , 1000 millis)
+    // Await.ready(pipeline(Get(uri)) , 1000 millis)
+    val response: HttpResponse = Await.result(pipeline(Get(uri)) , 1000 millis)
+    response.status.intValue
   }
 
 
-  def incr(key : String) : Unit = {
+  def incr(key : String) : Int = {
     val uri = base_uri + "?method=incr"+"&key="+key
-    Await.ready(pipeline(Get(uri)) , 1000 millis)
+    val response: HttpResponse = Await.result(pipeline(Get(uri)) , 1000 millis)
+    response.status.intValue
   }
 }
